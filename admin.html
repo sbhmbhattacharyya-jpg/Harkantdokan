@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harkant dokan Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #f97316;
+            --primary-dark: #ea580c;
+            --secondary: #3b82f6;
+            --dark: #1e293b;
+            --darker: #0f172a;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --border: #e5e7eb;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --shadow: 0 4px 20px rgba(0,0,0,0.08);
+            --radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            --sidebar-width: 260px;
+            --header-height: 60px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); }
+        img { max-width: 100%; display: block; }
+        button { font-family: inherit; cursor: pointer; border: none; background: none; }
+        a { text-decoration: none; color: inherit; }
+        input, textarea, select { font-family: inherit; font-size: 15px; width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: #fff; outline: none; transition: var(--transition); }
+        input:focus, textarea:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(249,115,22,0.15); }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-width);
+            background: var(--darker); color: #fff; display: flex; flex-direction: column; z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+        .sidebar-header { padding: 24px 20px; font-weight: 600; font-size: 22px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-header i { color: var(--primary); font-size: 28px; }
+        .sidebar-nav { flex: 1; padding: 20px 12px; display: flex; flex-direction: column; gap: 6px; }
+        .sidebar-nav a, .sidebar-nav button {
+            display: flex; align-items: center; gap: 14px; padding: 13px 16px; border-radius: 10px;
+            color: #cbd5e1; font-size: 15px; transition: var(--transition); text-align: left; width: 100%;
+        }
+        .sidebar-nav a:hover, .sidebar-nav button:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .sidebar-nav a.active { background: var(--primary); color: #fff; }
+        .sidebar-nav i { width: 22px; text-align: center; font-size: 18px; }
+        .sidebar-logout { margin-top: auto; color: #f87171; }
+
+        /* Main */
+        .main { margin-left: var(--sidebar-width); padding: 24px; min-height: 100vh; }
+        .main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+        .main-title { font-size: 24px; font-weight: 700; color: var(--dark); }
+
+        .section { display: none; animation: fadeIn 0.3s ease; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .stat-card { background: var(--card); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 16px; }
+        .stat-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #fff; }
+        .stat-icon.products { background: #3b82f6; }
+        .stat-icon.orders { background: #f97316; }
+        .stat-icon.users { background: #22c55e; }
+        .stat-icon.messages { background: #a855f7; }
+        .stat-info h3 { font-size: 28px; font-weight: 700; }
+        .stat-info p { color: var(--text-light); font-size: 14px; }
+
+        .card { background: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+        th { background: var(--bg); font-weight: 600; color: var(--text-light); white-space: nowrap; }
+        td img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; }
+        .action-btn { padding: 8px 12px; border-radius: 8px; font-size: 13px; transition: var(--transition); display: inline-flex; align-items: center; gap: 6px; }
+        .action-btn.edit { background: #dbeafe; color: #1e40af; }
+        .action-btn.edit:hover { background: #bfdbfe; }
+        .action-btn.delete { background: #fee2e2; color: #991b1b; }
+        .action-btn.delete:hover { background: #fecaca; }
+        .status-select { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; background: #fff; }
+        .empty-state { text-align: center; padding: 40px; color: var(--text-light); background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); }
+        .empty-state i { font-size: 40px; margin-bottom: 12px; }
+
+        /* Buttons */
+        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px 22px; border-radius: 12px; font-weight: 600; transition: var(--transition); gap: 8px; }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(249,115,22,0.4); }
+        .btn-outline { border: 2px solid var(--primary); color: var(--primary); }
+        .btn-outline:hover { background: var(--primary); color: #fff; }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-sm { padding: 8px 14px; font-size: 13px; border-radius: 8px; }
+
+        /* Modals */
+        .modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center;
+            z-index: 2000; padding: 16px; animation: fadeIn 0.3s ease;
+        }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--card); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .modal-close { position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; background: #f3f4f6; color: var(--text-light); display: flex; align-items: center; justify-content: center; font-size: 16px; transition: var(--transition); }
+        .modal-close:hover { background: var(--danger); color: #fff; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--text-light); }
+
+        /* Login Screen */
+        #loginScreen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--darker); padding: 16px; }
+        .login-box { background: #fff; border-radius: var(--radius); padding: 32px; width: 100%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        .login-box h2 { text-align: center; margin-bottom: 20px; color: var(--dark); }
+        .login-box .logo { display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 700; font-size: 22px; margin-bottom: 20px; }
+        .login-box .logo i { color: var(--primary); font-size: 28px; }
+
+        /* Mobile Bottom Nav */
+        .mobile-nav {
+            display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--darker); z-index: 1001;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.15); height: 62px;
+        }
+        .mobile-nav .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9ca3af; font-size: 10px; gap: 4px; }
+        .mobile-nav .nav-item.active { color: var(--primary); }
+        .mobile-nav .nav-item i { font-size: 18px; }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main { margin-left: 0; padding: 16px; padding-bottom: 80px; }
+            .mobile-nav { display: flex; }
+            .main-header { flex-wrap: wrap; gap: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen">
+        <div class="login-box">
+            <div class="logo"><i class="fas fa-hotel"></i> HarkantDokan Admin</div>
+            <form id="adminLoginForm">
+                <div class="form-group"><label>Email</label><input type="email" id="adminLoginEmail" required></div>
+                <div class="form-group"><label>Password</label><input type="password" id="adminLoginPassword" required></div>
+                <div class="auth-error" id="adminAuthError" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:8px; margin-bottom:12px;"></div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header"><i class="fas fa-hotel"></i> LawaniHotel Admin</div>
+        <nav class="sidebar-nav">
+            <a href="#dashboard" class="active" data-section="dashboard"><i class="fas fa-chart-pie"></i> Dashboard</a>
+            <a href="#products" data-section="products"><i class="fas fa-box"></i> Products</a>
+            <a href="#orders" data-section="orders"><i class="fas fa-shopping-bag"></i> Orders</a>
+            <a href="#slider" data-section="slider"><i class="fas fa-image"></i> Slider</a>
+            <a href="#messages" data-section="messages"><i class="fas fa-envelope"></i> Messages</a>
+            <button class="sidebar-logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </nav>
+    </aside>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-nav" id="mobileNav">
+        <button class="nav-item active" data-section="dashboard"><i class="fas fa-chart-pie"></i><span>Dashboard</span></button>
+        <button class="nav-item" data-section="products"><i class="fas fa-box"></i><span>Products</span></button>
+        <button class="nav-item" data-section="orders"><i class="fas fa-shopping-bag"></i><span>Orders</span></button>
+        <button class="nav-item" data-section="slider"><i class="fas fa-image"></i><span>Slider</span></button>
+        <button class="nav-item" data-section="messages"><i class="fas fa-envelope"></i><span>Messages</span></button>
+        <button class="nav-item" id="mobileLogoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main" id="mainContent">
+        <header class="main-header">
+            <h1 class="main-title" id="pageTitle">Dashboard</h1>
+            <button class="btn btn-outline btn-sm" id="sidebarToggle"><i class="fas fa-bars"></i> Menu</button>
+        </header>
+
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section active">
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-icon products"><i class="fas fa-box"></i></div><div class="stat-info"><h3 id="statProducts">0</h3><p>Total Products</p></div></div>
+                <div class="stat-card"><div class="stat-icon orders"><i class="fas fa-shopping-bag"></i></div><div class="stat-info"><h3 id="statOrders">0</h3><p>Total Orders</p></div></div>
+                <div class="stat-card"><div class="stat-icon users"><i class="fas fa-users"></i></div><div class="stat-info"><h3 id="statUsers">0</h3><p>Total Users</p></div></div>
+                <div class="stat-card"><div class="stat-icon messages"><i class="fas fa-envelope"></i></div><div class="stat-info"><h3 id="statMessages">0</h3><p>Total Messages</p></div></div>
+            </div>
+        </section>
+
+        <!-- Products Section -->
+        <section id="products" class="section">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h2>Products</h2>
+                <button class="btn btn-primary btn-sm" id="addProductBtn"><i class="fas fa-plus"></i> Add Product</button>
+            </div>
+            <div class="table-responsive card"><table><thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Description</th><th>Actions</th></tr></thead><tbody id="productsTableBody"></tbody></table></div>
+        </section>
+
+        <!-- Orders Section -->
+        <section id="orders" class="section">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h2>Orders</h2>
+                <button class="btn btn-outline btn-sm" id="refreshOrdersBtn"><i class="fas fa-sync"></i> Refresh</button>
+            </div>
+            <div class="table-responsive card"><table><thead><tr><th>Order ID</th><th>Customer Name</th><th>Phone Number</th><th>Email</th><th>Delivery Address</th><th>Date</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody id="ordersTableBody"></tbody></table></div>
+        </section>
+
+        <!-- Slider Section -->
+        <section id="slider" class="section">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h2>Slider Images</h2>
+                <button class="btn btn-primary btn-sm" id="addSliderBtn"><i class="fas fa-plus"></i> Add Image</button>
+            </div>
+            <div class="table-responsive card"><table><thead><tr><th>Preview</th><th>Image URL</th><th>Actions</th></tr></thead><tbody id="sliderTableBody"></tbody></table></div>
+        </section>
+
+        <!-- Messages Section -->
+        <section id="messages" class="section">
+            <h2 style="margin-bottom:16px;">Messages</h2>
+            <div class="table-responsive card"><table><thead><tr><th>Date</th><th>Sender Name</th><th>Sender Email</th><th>Message</th></tr></thead><tbody id="messagesTableBody"></tbody></table></div>
+        </section>
+    </main>
+
+    <!-- Product Modal -->
+    <div class="modal" id="productModal">
+        <div class="modal-content">
+            <button class="modal-close" data-close="productModal"><i class="fas fa-times"></i></button>
+            <h3 class="modal-title" id="productModalTitle">Add Product</h3>
+            <form id="productForm">
+                <input type="hidden" id="productId">
+                <div class="form-group"><label>Name</label><input type="text" id="productName" required></div>
+                <div class="form-group"><label>Category</label><input type="text" id="productCategory" required></div>
+                <div class="form-group"><label>Price</label><input type="number" step="0.01" id="productPrice" required></div>
+                <div class="form-group"><label>Description</label><textarea id="productDescription" rows="3"></textarea></div>
+                <div class="form-group"><label>Image URL</label><input type="url" id="productImageUrl"></div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Save Product</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Slider Modal -->
+    <div class="modal" id="sliderModal">
+        <div class="modal-content">
+            <button class="modal-close" data-close="sliderModal"><i class="fas fa-times"></i></button>
+            <h3 class="modal-title">Add Slider Image</h3>
+            <form id="sliderForm">
+                <div class="form-group"><label>Image URL</label><input type="url" id="sliderImageUrl" required></div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Add Image</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-container" id="toastContainer" style="position:fixed; top:20px; right:20px; z-index:3000;"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, set, get, push, update, remove, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const firebaseConfig = {
+  apiKey: "AIzaSyAtw0O9SZ2cd5ol2YJlkCiGw90K4lbZ0to",
+  authDomain: "harkant-20e6a.firebaseapp.com",
+  databaseURL: "https://harkant-20e6a-default-rtdb.firebaseio.com",
+  projectId: "harkant-20e6a",
+  storageBucket: "harkant-20e6a.firebasestorage.app",
+  messagingSenderId: "198674278465",
+  appId: "1:198674278465:web:9a6707dee6e129c3923ec0"
+};
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let currentUser = null;
+        let products = [];
+        let orders = [];
+        let sliderImages = [];
+        let messages = [];
+
+        // Toast
+        function showToast(msg) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.style.cssText = 'background:#0f172a;color:#fff;padding:14px 20px;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,0.3);margin-bottom:8px;font-size:14px;';
+            toast.textContent = msg;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Modal helpers
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        document.querySelectorAll('.modal-close').forEach(btn => btn.addEventListener('click', () => closeModal(btn.dataset.close)));
+        document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); }));
+
+        // Section Navigation
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            const section = document.getElementById(sectionId);
+            if (section) section.classList.add('active');
+            document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.toggle('active', a.dataset.section === sectionId));
+            document.querySelectorAll('.mobile-nav .nav-item').forEach(n => n.classList.toggle('active', n.dataset.section === sectionId));
+            const titles = { dashboard: 'Dashboard', products: 'Products', orders: 'Orders', slider: 'Slider Management', messages: 'Messages' };
+            document.getElementById('pageTitle').textContent = titles[sectionId] || 'Dashboard';
+            closeSidebar();
+        }
+
+        function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); }
+        document.getElementById('sidebarToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
+        document.querySelectorAll('.sidebar-nav a').forEach(a => a.addEventListener('click', () => showSection(a.dataset.section)));
+        document.querySelectorAll('.mobile-nav .nav-item').forEach(n => n.addEventListener('click', () => {
+            if (n.id === 'mobileLogoutBtn') return;
+            showSection(n.dataset.section);
+        }));
+
+        // Auth
+        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('adminLoginEmail').value.trim();
+            const password = document.getElementById('adminLoginPassword').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                showToast('Login successful');
+            } catch (error) {
+                const errEl = document.getElementById('adminAuthError');
+                errEl.textContent = error.message.replace('Firebase: ', '');
+                errEl.style.display = 'block';
+                setTimeout(() => errEl.style.display = 'none', 4000);
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
+        document.getElementById('mobileLogoutBtn').addEventListener('click', () => signOut(auth));
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+                document.getElementById('sidebar').style.display = 'flex';
+                document.getElementById('mobileNav').style.display = 'flex';
+                loadAllData();
+            } else {
+                currentUser = null;
+                document.getElementById('loginScreen').style.display = 'flex';
+                document.getElementById('mainContent').style.display = 'none';
+                document.getElementById('sidebar').style.display = 'none';
+                document.getElementById('mobileNav').style.display = 'none';
+            }
+        });
+
+        // Load all data
+        function loadAllData() {
+            loadProducts();
+            loadOrders();
+            loadSliderImages();
+            loadMessages();
+            loadStats();
+        }
+
+        function loadStats() {
+            onValue(ref(db, 'products'), snap => {
+                document.getElementById('statProducts').textContent = snap.exists() ? Object.keys(snap.val()).length : 0;
+            });
+            onValue(ref(db, 'orders'), snap => {
+                let count = 0;
+                const data = snap.val();
+                if (data) {
+                    Object.values(data).forEach(userOrders => { count += Object.keys(userOrders).length; });
+                }
+                document.getElementById('statOrders').textContent = count;
+            });
+            onValue(ref(db, 'users'), snap => {
+                document.getElementById('statUsers').textContent = snap.exists() ? Object.keys(snap.val()).length : 0;
+            });
+            onValue(ref(db, 'messages'), snap => {
+                document.getElementById('statMessages').textContent = snap.exists() ? Object.keys(snap.val()).length : 0;
+            });
+        }
+
+        // Products CRUD
+        function loadProducts() {
+            onValue(ref(db, 'products'), snap => {
+                const data = snap.val();
+                products = data ? Object.keys(data).map(id => ({ id, ...data[id] })) : [];
+                renderProductsTable();
+            });
+        }
+
+        function renderProductsTable() {
+            const tbody = document.getElementById('productsTableBody');
+            if (!products.length) {
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state"><i class="fas fa-box"></i><br>No products found</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = products.map(p => `
+                <tr>
+                    <td><img src="${p.imageUrl || 'https://via.placeholder.com/50?text=LawaniHotel'}" alt="${p.name}"></td>
+                    <td>${p.name}</td>
+                    <td>${p.category || 'General'}</td>
+                    <td>$${p.price}</td>
+                    <td>${p.description || ''}</td>
+                    <td>
+                        <button class="action-btn edit edit-product" data-id="${p.id}"><i class="fas fa-edit"></i> Edit</button>
+                        <button class="action-btn delete delete-product" data-id="${p.id}"><i class="fas fa-trash"></i> Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        document.getElementById('addProductBtn').addEventListener('click', () => {
+            document.getElementById('productModalTitle').textContent = 'Add Product';
+            document.getElementById('productForm').reset();
+            document.getElementById('productId').value = '';
+            openModal('productModal');
+        });
+
+        document.getElementById('productsTableBody').addEventListener('click', (e) => {
+            const editBtn = e.target.closest('.edit-product');
+            if (editBtn) {
+                const product = products.find(p => p.id === editBtn.dataset.id);
+                if (product) {
+                    document.getElementById('productModalTitle').textContent = 'Edit Product';
+                    document.getElementById('productId').value = product.id;
+                    document.getElementById('productName').value = product.name || '';
+                    document.getElementById('productCategory').value = product.category || '';
+                    document.getElementById('productPrice').value = product.price || '';
+                    document.getElementById('productDescription').value = product.description || '';
+                    document.getElementById('productImageUrl').value = product.imageUrl || '';
+                    openModal('productModal');
+                }
+                return;
+            }
+            const delBtn = e.target.closest('.delete-product');
+            if (delBtn) {
+                const id = delBtn.dataset.id;
+                if (confirm('Delete this product?')) {
+                    remove(ref(db, 'products/' + id)).then(() => showToast('Product deleted'));
+                }
+            }
+        });
+
+        document.getElementById('productForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('productId').value;
+            const productData = {
+                name: document.getElementById('productName').value.trim(),
+                category: document.getElementById('productCategory').value.trim(),
+                price: parseFloat(document.getElementById('productPrice').value),
+                description: document.getElementById('productDescription').value.trim(),
+                imageUrl: document.getElementById('productImageUrl').value.trim() || ''
+            };
+            try {
+                if (id) {
+                    await update(ref(db, 'products/' + id), productData);
+                    showToast('Product updated');
+                } else {
+                    await push(ref(db, 'products'), productData);
+                    showToast('Product added');
+                }
+                closeModal('productModal');
+            } catch (err) {
+                showToast('Error saving product');
+            }
+        });
+
+        // Orders
+        function loadOrders() {
+            onValue(ref(db, 'orders'), snap => {
+                console.log('Orders data received:', snap.val()); // Debug log
+                const data = snap.val();
+                orders = [];
+                if (data) {
+                    Object.keys(data).forEach(userId => {
+                        if (data[userId]) {
+                            Object.keys(data[userId]).forEach(orderId => {
+                                orders.push({ userId, orderId, ...data[userId][orderId] });
+                            });
+                        }
+                    });
+                }
+                orders.sort((a,b) => (b.date || 0) - (a.date || 0));
+                renderOrdersTable();
+            });
+        }
+
+        function renderOrdersTable() {
+            const tbody = document.getElementById('ordersTableBody');
+            if (!orders.length) {
+                tbody.innerHTML = `<tr><td colspan="9" class="empty-state"><i class="fas fa-shopping-bag"></i><br>No orders found</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = orders.map(order => `
+                <tr>
+                    <td>${order.orderId}</td>
+                    <td>${order.username || 'N/A'}</td>
+                    <td>${order.phoneNumber || 'N/A'}</td>
+                    <td>${order.userEmail || 'N/A'}</td>
+                    <td>${order.shippingAddress || 'N/A'}</td>
+                    <td>${new Date(order.date || Date.now()).toLocaleString()}</td>
+                    <td>$${(order.totalAmount || 0).toFixed(2)}</td>
+                    <td>
+                        <select class="status-select" data-user="${order.userId}" data-order="${order.orderId}">
+                            ${['Pending','Confirmed','Preparing','Shipped','Delivered','Cancelled'].map(status => `
+                                <option value="${status}" ${order.status === status ? 'selected' : ''}>${status}</option>
+                            `).join('')}
+                        </select>
+                    </td>
+                    <td><button class="action-btn delete delete-order" data-user="${order.userId}" data-order="${order.orderId}"><i class="fas fa-trash"></i> Delete</button></td>
+                </tr>
+            `).join('');
+        }
+
+        // Manual refresh button
+        document.getElementById('refreshOrdersBtn').addEventListener('click', () => {
+            loadOrders();
+            showToast('Orders refreshed');
+        });
+
+        document.getElementById('ordersTableBody').addEventListener('change', (e) => {
+            const select = e.target.closest('.status-select');
+            if (select) {
+                const { user, order } = select.dataset;
+                update(ref(db, `orders/${user}/${order}`), { status: select.value })
+                    .then(() => showToast('Order status updated'))
+                    .catch(() => showToast('Error updating status'));
+            }
+        });
+
+        document.getElementById('ordersTableBody').addEventListener('click', (e) => {
+            const delBtn = e.target.closest('.delete-order');
+            if (delBtn) {
+                const { user, order } = delBtn.dataset;
+                if (confirm('Delete this order?')) {
+                    remove(ref(db, `orders/${user}/${order}`)).then(() => showToast('Order deleted'));
+                }
+            }
+        });
+
+        // Slider
+        function loadSliderImages() {
+            onValue(ref(db, 'sliderImages'), snap => {
+                const data = snap.val();
+                sliderImages = data ? Object.keys(data).map(id => ({ id, ...data[id] })) : [];
+                renderSliderTable();
+            });
+        }
+
+        function renderSliderTable() {
+            const tbody = document.getElementById('sliderTableBody');
+            if (!sliderImages.length) {
+                tbody.innerHTML = `<tr><td colspan="3" class="empty-state"><i class="fas fa-image"></i><br>No slider images</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = sliderImages.map(img => `
+                <tr>
+                    <td><img src="${img.downloadURL}" alt="Slider" style="width:100px;height:50px;object-fit:cover;border-radius:8px;"></td>
+                    <td style="word-break:break-all;">${img.downloadURL}</td>
+                    <td><button class="action-btn delete delete-slider" data-id="${img.id}"><i class="fas fa-trash"></i> Delete</button></td>
+                </tr>
+            `).join('');
+        }
+
+        document.getElementById('addSliderBtn').addEventListener('click', () => {
+            document.getElementById('sliderForm').reset();
+            openModal('sliderModal');
+        });
+
+        document.getElementById('sliderForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const url = document.getElementById('sliderImageUrl').value.trim();
+            if (!url) return;
+            try {
+                await push(ref(db, 'sliderImages'), { downloadURL: url });
+                closeModal('sliderModal');
+                showToast('Slider image added');
+            } catch (err) {
+                showToast('Error adding image');
+            }
+        });
+
+        document.getElementById('sliderTableBody').addEventListener('click', (e) => {
+            const delBtn = e.target.closest('.delete-slider');
+            if (delBtn) {
+                if (confirm('Delete this slider image?')) {
+                    remove(ref(db, 'sliderImages/' + delBtn.dataset.id)).then(() => showToast('Image deleted'));
+                }
+            }
+        });
+
+        // Messages
+        function loadMessages() {
+            onValue(ref(db, 'messages'), snap => {
+                const data = snap.val();
+                messages = data ? Object.keys(data).map(id => ({ id, ...data[id] })) : [];
+                messages.sort((a,b) => b.date - a.date);
+                renderMessagesTable();
+            });
+        }
+
+        function renderMessagesTable() {
+            const tbody = document.getElementById('messagesTableBody');
+            if (!messages.length) {
+                tbody.innerHTML = `<tr><td colspan="4" class="empty-state"><i class="fas fa-envelope"></i><br>No messages</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = messages.map(msg => `
+                <tr>
+                    <td>${new Date(msg.date).toLocaleString()}</td>
+                    <td>${msg.name || 'N/A'}</td>
+                    <td>${msg.email || 'N/A'}</td>
+                    <td>${msg.message || ''}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Initial
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('mainContent').style.display = 'none';
+        document.getElementById('sidebar').style.display = 'none';
+        document.getElementById('mobileNav').style.display = 'none';
+    </script>
+</body>
+</html>
